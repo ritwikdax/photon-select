@@ -1,8 +1,6 @@
 import { ImageData } from "../types/image";
 import { BASE_API_URL } from "../utils/http";
 
-const API_BASE_URL = "http://192.168.1.3:3001";
-
 interface PaginationParams {
   nextPageToken?: string;
   folderId?: string;
@@ -37,7 +35,7 @@ export const imageService = {
       // Use provided folderId or fallback to default
       const targetFolderId = folderId;
 
-      const url = `${API_BASE_URL}/public/images/${projectId}/${targetFolderId}${
+      const url = `${BASE_API_URL}/public/images/${projectId}/${targetFolderId}${
         nextPageToken ? `?nextPageToken=${nextPageToken}` : ""
       }`;
 
@@ -74,5 +72,3 @@ export const imageService = {
     }
   },
 };
-
-export { API_BASE_URL };
