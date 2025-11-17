@@ -1,16 +1,11 @@
-import axios from "axios";
 import { FolderData, FoldersResponse } from "../types/image";
-import { BASE_API_URL } from "../utils/http";
+import { http } from "../utils/http";
 
 export const folderService = {
-  async fetchFolders(projectId: string): Promise<FolderData[]> {
-    if (projectId === undefined || projectId === null) {
-      return [];
-    }
-
+  async fetchFolders(): Promise<FolderData[]> {
     try {
-      const data = await axios.get<FoldersResponse>(
-        `${BASE_API_URL}/public/folders/${projectId}`
+      const data = await http.get<FoldersResponse>(
+        `/public/folders`
       );
 
       return data.data.folders;

@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { FolderData } from '../types/image';
 import { folderService } from '../services/folderService';
-import { useParams } from 'next/navigation';
 
 interface FolderContextType {
   folders: FolderData[];
@@ -25,14 +24,12 @@ export function FolderProvider({ children }: FolderProviderProps) {
   const [selectedFolder, setSelectedFolder] = useState<FolderData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const params = useParams();
-  const projectId = params.projectId as string;
 
   const fetchFolders = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const foldersData = await folderService.fetchFolders(projectId);
+      const foldersData = await folderService.fetchFolders();
       setFolders(foldersData);
       
       // Auto-select first folder if none selected
@@ -52,10 +49,8 @@ export function FolderProvider({ children }: FolderProviderProps) {
   };
 
   useEffect(() => {
-    if (projectId) {
-      fetchFolders();
-    }
-  }, [projectId]);
+    fetchFolders();
+  }, []);
 
   const value: FolderContextType = {
     folders,

@@ -1,10 +1,9 @@
 import { ImageData } from "../types/image";
-import { BASE_API_URL } from "../utils/http";
+import { http, BASE_API_URL } from "../utils/http";
 
 interface PaginationParams {
   nextPageToken?: string;
   folderId?: string;
-  projectId?: string;
 }
 
 interface PaginatedResponse {
@@ -23,9 +22,9 @@ export const createAlternativeGoogleDriveUrl = (
 export const imageService = {
   async fetchImages(params: PaginationParams = {}): Promise<PaginatedResponse> {
     try {
-      const { nextPageToken, folderId, projectId } = params;
+      const { nextPageToken, folderId } = params;
 
-      if (!projectId || !folderId) {
+      if (!folderId) {
         return {
           images: [],
           nextPageToken: undefined,
@@ -35,24 +34,14 @@ export const imageService = {
       // Use provided folderId or fallback to default
       const targetFolderId = folderId;
 
-      const url = `${BASE_API_URL}/public/images/${projectId}/${targetFolderId}${
+      const url = `/public/images/${targetFolderId}${
         nextPageToken ? `?nextPageToken=${nextPageToken}` : ""
       }`;
 
       console.log("Fetching URL:", url); // Debug log to verify URL construction
 
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const response = await http.get(url);
+      const data = response.data;
 
       // Handle the new response structure with nextPageToken
       const transformedImages = data.images.map((image: ImageData) => ({

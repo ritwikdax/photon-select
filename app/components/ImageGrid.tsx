@@ -5,10 +5,10 @@ import { ImageData } from "../types/image";
 import LazyImage from "./LazyImage";
 import { http } from "../utils/http";
 import { useToast } from "./ToastProvider";
+import { HeartIcon, CheckIcon } from "./icons";
 
 interface ImageGridProps {
   images: ImageData[];
-  projectId: string;
   folderId: string;
   folderName: string;
   onImageClick: (image: ImageData, index: number) => void;
@@ -23,7 +23,6 @@ interface ImageGridProps {
 const ImageCard = memo(
   ({
     image,
-    projectId,
     folderId,
     folderName,
     index,
@@ -32,7 +31,6 @@ const ImageCard = memo(
     onToggleSelection,
   }: {
     image: ImageData;
-    projectId: string;
     folderId: string;
     folderName: string;
     index: number;
@@ -72,10 +70,9 @@ const ImageCard = memo(
         try {
           if (newSelectedState) {
             // POST request when image is selected
-            await http.post("/api/selectedImages", {
+            await http.post("/public/selectImage", {
               imageId: image.id,
               imageFileName: image.name,
-              projectId,
               folderId,
               folderName,
             });
@@ -85,7 +82,7 @@ const ImageCard = memo(
             );
           } else {
             // DELETE request when image is deselected
-            await http.delete(`/api/selectedImages?imageId=${image.id}`);
+            await http.delete(`/public/selectImage/${image.id}`);
             success(
               "Image Removed",
               `"${image.name}" removed from editing selection`
@@ -106,22 +103,7 @@ const ImageCard = memo(
           onToggleSelection?.(image.id, isSelected);
         }
       },
-      [image.id, image.name, isSelected, onToggleSelection, success, error, projectId, folderId, folderName]
-    ); // Heart icon component
-    const HeartIcon = ({ filled }: { filled: boolean }) => (
-      <svg
-        className={`w-6 h-6 transition-all duration-300 ${
-          filled
-            ? "text-red-500 scale-110"
-            : "text-white drop-shadow-lg hover:text-red-300"
-        }`}
-        fill={filled ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth={filled ? 0 : 2}
-        viewBox="0 0 24 24"
-      >
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-      </svg>
+      [image.id, image.name, isSelected, onToggleSelection, success, error, folderId, folderName]
     );
 
     return (
@@ -154,7 +136,14 @@ const ImageCard = memo(
                 : "Add to editing selection"
             }
           >
-            <HeartIcon filled={isSelected} />
+            <HeartIcon 
+              filled={isSelected} 
+              className={`w-6 h-6 transition-all duration-300 ${
+                isSelected
+                  ? "text-red-500 scale-110"
+                  : "text-white drop-shadow-lg hover:text-red-300"
+              }`}
+            />
           </button>
 
           {/* Selection indicator overlay */}
@@ -171,13 +160,7 @@ const ImageCard = memo(
           {/* Selection status indicator */}
           {isSelected && (
             <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 font-medium">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <CheckIcon className="w-4 h-4" />
               <span>Selected for editing</span>
             </div>
           )}
@@ -203,7 +186,6 @@ ImageCard.displayName = "ImageCard";
 const ImageGrid = memo(
   ({
     images,
-    projectId,
     folderId,
     folderName,
     onImageClick,
@@ -220,17 +202,7 @@ const ImageGrid = memo(
           <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                <svg
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <CheckIcon className="w-5 h-5" />
                 <span className="font-medium">
                   {selectedImages.size} image
                   {selectedImages.size !== 1 ? "s" : ""} selected for editing
@@ -249,7 +221,6 @@ const ImageGrid = memo(
               onImageClick={onImageClick}
               isSelected={selectedImages.has(image.id)}
               onToggleSelection={onToggleSelection}
-              projectId={projectId}
               folderId={folderId}
               folderName={folderName}
             />

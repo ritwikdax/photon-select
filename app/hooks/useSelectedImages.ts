@@ -31,7 +31,7 @@ export const useSelectedImages = (maxSelectionData?: MaxSelectionData | null) =>
       setIsLoading(true);
       setError(null);
       
-      const response = await http.get('/api/selectedImages?fields=imageId');
+      const response = await http.get('/public/selectedImages');
       const selectedImagesData: SelectedImageData[] = response.data;
       
       // Create Set from imageId values for efficient lookup

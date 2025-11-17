@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useFolderContext } from '../context/FolderContext';
 import { FolderData } from '../types/image';
+import { FolderIcon, ChevronDownIcon, CheckmarkIcon } from './icons';
 
 interface FolderDropdownProps {
   className?: string;
@@ -60,19 +61,7 @@ export default function FolderDropdown({ className = '' }: FolderDropdownProps) 
           aria-expanded={isOpen}
         >
           <span className="flex items-center">
-            <svg
-              className="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
-              />
-            </svg>
+            <FolderIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3" />
             <span className="block truncate font-medium">
               {isLoading 
                 ? 'Loading folders...' 
@@ -83,20 +72,11 @@ export default function FolderDropdown({ className = '' }: FolderDropdownProps) 
             </span>
           </span>
           <span className="pointer-events-none absolute inset-y-0 right-0 ml-3 flex items-center pr-2">
-            <svg
+            <ChevronDownIcon
               className={`h-5 w-5 text-gray-400 transition-transform duration-200 ${
                 isOpen ? 'rotate-180' : ''
               }`}
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                clipRule="evenodd"
-              />
-            </svg>
+            />
           </span>
         </button>
 
@@ -124,19 +104,7 @@ export default function FolderDropdown({ className = '' }: FolderDropdownProps) 
                   aria-selected={selectedFolder?.folderId === folder.folderId}
                 >
                   <div className="flex items-center">
-                    <svg
-                      className="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
-                      />
-                    </svg>
+                    <FolderIcon className="h-5 w-5 text-gray-400 dark:text-gray-500 mr-3" />
                     <span className="block truncate font-medium">
                       {folder.name}
                     </span>
@@ -144,18 +112,7 @@ export default function FolderDropdown({ className = '' }: FolderDropdownProps) 
 
                   {selectedFolder?.folderId === folder.folderId && (
                     <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-600 dark:text-blue-400">
-                      <svg
-                        className="h-5 w-5"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
+                      <CheckmarkIcon className="h-5 w-5" />
                     </span>
                   )}
                 </div>

@@ -9,23 +9,18 @@ interface MaxSelectionData {
   isSelectionAllowed: boolean;
 }
 
-export const useMaxSelection = (projectId: string) => {
+export const useMaxSelection = () => {
   const [maxSelectionData, setMaxSelectionData] = useState<MaxSelectionData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { error: showError } = useToast();
 
   const fetchMaxSelection = useCallback(async () => {
-    if (!projectId) {
-      setIsLoading(false);
-      return;
-    }
-
     try {
       setIsLoading(true);
       setError(null);
       
-      const response = await http.get(`/public/maxSelection/${projectId}`);
+      const response = await http.get(`/public/maxSelection`);
       setMaxSelectionData(response.data);
     } catch (err) {
       console.error('Error fetching max selection data:', err);
@@ -46,7 +41,7 @@ export const useMaxSelection = (projectId: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [projectId, showError]);
+  }, [showError]);
 
   useEffect(() => {
     fetchMaxSelection();
