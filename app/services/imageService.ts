@@ -47,7 +47,7 @@ export const imageService = {
       const transformedImages = data.images.map((image: ImageData) => ({
         ...image,
         thumbnailLink: createAlternativeGoogleDriveUrl(image.thumbnailLink),
-        previewUrl: image.previewUrl,
+        preview: image.hdPreviewLink,
       }));
 
       return {

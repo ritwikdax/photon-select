@@ -1,8 +1,13 @@
-'use client';
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { FolderData } from '../types/image';
-import { folderService } from '../services/folderService';
+"use client";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { FolderData } from "../types/image";
+import { useFolders } from "../hooks/queries/useFolders";
 
 interface FolderContextType {
   folders: FolderData[];
@@ -20,58 +25,35 @@ interface FolderProviderProps {
 }
 
 export function FolderProvider({ children }: FolderProviderProps) {
-  const [folders, setFolders] = useState<FolderData[]>([]);
+  const { data: folders, isLoading, error, refetch } = useFolders();
   const [selectedFolder, setSelectedFolder] = useState<FolderData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchFolders = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const foldersData = await folderService.fetchFolders();
-      setFolders(foldersData);
-      
-      // Auto-select first folder if none selected
-      if (!selectedFolder && foldersData.length > 0) {
-        setSelectedFolder(foldersData[0]);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch folders');
-      console.error('Error fetching folders:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const refreshFolders = async () => {
-    await fetchFolders();
-  };
 
   useEffect(() => {
-    fetchFolders();
-  }, []);
+    if (folders?.folders && folders.folders.length > 0 && !selectedFolder) {
+      setSelectedFolder(folders.folders[0]);
+    }
+  }, [folders, selectedFolder]);
 
   const value: FolderContextType = {
-    folders,
+    folders: folders?.folders || [],
     selectedFolder,
     isLoading,
-    error,
+    error: error ? error.toString() : null,
     setSelectedFolder,
-    refreshFolders,
+    refreshFolders: async () => {
+      await refetch();
+    },
   };
 
   return (
-    <FolderContext.Provider value={value}>
-      {children}
-    </FolderContext.Provider>
+    <FolderContext.Provider value={value}>{children}</FolderContext.Provider>
   );
 }
 
 export function useFolderContext() {
   const context = useContext(FolderContext);
   if (context === undefined) {
-    throw new Error('useFolderContext must be used within a FolderProvider');
+    throw new Error("useFolderContext must be used within a FolderProvider");
   }
   return context;
 }

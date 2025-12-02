@@ -1,51 +1,44 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, use } from "react";
 import ImageGrid from "./components/ImageGrid";
+import ImagePreviewLightbox from "./components/ImagePreviewLightbox";
 import LoadingSpinner from "./components/LoadingSpinner";
 import Header from "./components/Header";
 import { ImageData } from "./types/image";
 import { imageService } from "./services/imageService";
-import { useSelectedImages } from "./hooks/useSelectedImages";
-import { useMaxSelection } from "./hooks/useMaxSelection";
-import {
-  useSelectedFolderId,
-  useSelectedFolderName,
-} from "./hooks/useFolders";
+import { useSelectedFolderId, useSelectedFolderName } from "./hooks/useFolders";
 import { AlertIcon, RefreshIcon, ImageIcon } from "./components/icons";
+import { useMaxSelection } from "./hooks/queries/useMaxSelection";
+import { useSelectedImages } from "./hooks/queries/useSelectedImages";
+import { useIsCountExceeded } from "./hooks/useIsCountExceeded";
+import { useSelectImage } from "./hooks/mutations/useSelectImage";
+import { useUnselectImage } from "./hooks/mutations/useUnselectImage";
 
 export default function Home() {
   const [images, setImages] = useState<ImageData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMaxCountExceeded = useIsCountExceeded();
   const [nextPageToken, setNextPageToken] = useState<string | undefined>(
     undefined
   );
   const [hasMore, setHasMore] = useState(true);
+  const [activePreviewIndex, setActivePreviewIndex] = useState<number>(-1);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   const selectedFolderName = useSelectedFolderName();
-
-  // Get the currently selected folder ID
   const selectedFolderId = useSelectedFolderId();
-  
-  // Fetch max selection data for this project
+  const { data: maxSelectionData, isLoading: isMaxSelectionLoading } =
+    useMaxSelection();
   const {
-    maxSelectionData,
-    isLoading: isMaxSelectionLoading,
-    error: maxSelectionError
-  } = useMaxSelection();
-  
-  // Use the custom hook for selected images
-  const {
-    selectedImages,
+    data: selectedImagesSet,
     isLoading: isSelectedImagesLoading,
     error: selectedImagesError,
-    toggleSelection,
-    isMaxCountExceeded,
-    isSelectionAllowed,
-    maxSelectionCount
-  } = useSelectedImages(maxSelectionData);
+  } = useSelectedImages();
+  const selectImageMutation = useSelectImage();
+  const unselectImageMutation = useUnselectImage();
 
   const loadImages = useCallback(
     async (pageToken?: string, append: boolean = false) => {
@@ -96,9 +89,13 @@ export default function Home() {
     }
   }, [selectedFolderId, loadImages]);
 
-  const handleImageClick = useCallback((image: ImageData, index: number) => {
-    // Open the full-size image in a new window/tab
-    window.open(image.previewUrl, "_blank", "noopener,noreferrer");
+  const handleImageClick = useCallback((_image: ImageData, index: number) => {
+    setActivePreviewIndex(index);
+    setIsLightboxOpen(true);
+  }, []);
+
+  const handleClosePreview = useCallback(() => {
+    setIsLightboxOpen(false);
   }, []);
 
   const handleLoadMore = useCallback(() => {
@@ -113,9 +110,9 @@ export default function Home() {
 
   const handleToggleSelection = useCallback(
     (imageId: string, isSelected: boolean) => {
-      return toggleSelection(imageId, isSelected);
+      return true;
     },
-    [toggleSelection]
+    []
   );
 
   return (
@@ -125,11 +122,11 @@ export default function Home() {
         isLoading={isLoading}
         error={error}
         imagesCount={images.length}
-        selectedImagesCount={selectedImages.size}
-        selectedImagesError={selectedImagesError}
+        selectedImagesCount={selectedImagesSet?.size || 0}
+        selectedImagesError={selectedImagesError?.message || null}
         hasMore={hasMore}
         isMaxCountExceeded={isMaxCountExceeded}
-        maxSelectionCount={maxSelectionCount}
+        maxSelectionCount={maxSelectionData?.maxSelectionCount ?? 0}
       />
 
       {/* Main Content */}
@@ -146,7 +143,11 @@ export default function Home() {
               className="text-blue-600 dark:text-blue-400 mb-4"
             />
             <p className="text-gray-600 dark:text-gray-400">
-              {isLoading ? "Loading images..." : isSelectedImagesLoading ? "Loading selected images..." : "Loading selection limits..."}
+              {isLoading
+                ? "Loading images..."
+                : isSelectedImagesLoading
+                ? "Loading selected images..."
+                : "Loading selection limits..."}
             </p>
           </div>
         ) : error ? (
@@ -161,8 +162,7 @@ export default function Home() {
               </p>
               <button
                 onClick={handleRetry}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
-              >
+                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200">
                 <RefreshIcon className="w-4 h-4 mr-2" />
                 Try Again
               </button>
@@ -180,25 +180,37 @@ export default function Home() {
               </p>
               <button
                 onClick={handleRetry}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
-              >
+                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200">
                 <RefreshIcon className="w-4 h-4 mr-2" />
                 Refresh
               </button>
             </div>
           </div>
         ) : (
-          <ImageGrid
-            folderId={selectedFolderId ?? ""}
-            folderName={selectedFolderName ?? ""}
-            images={images}
-            onImageClick={handleImageClick}
-            onLoadMore={handleLoadMore}
-            hasMore={hasMore}
-            isLoadingMore={isLoadingMore}
-            selectedImages={selectedImages}
-            onToggleSelection={handleToggleSelection}
-          />
+          <>
+            <ImageGrid
+              folderId={selectedFolderId ?? ""}
+              folderName={selectedFolderName ?? ""}
+              images={images}
+              onImageClick={handleImageClick}
+              onLoadMore={handleLoadMore}
+              hasMore={hasMore}
+              isLoadingMore={isLoadingMore}
+              selectedImages={selectedImagesSet || new Set()}
+              //onToggleSelection={handleToggleSelection}
+            />
+
+            <ImagePreviewLightbox
+              images={images}
+              currentIndex={activePreviewIndex}
+              isOpen={isLightboxOpen}
+              onClose={handleClosePreview}
+              folderId={selectedFolderId ?? ""}
+              folderName={selectedFolderName ?? ""}
+              selectedImages={selectedImagesSet || new Set()}
+              onToggleSelection={handleToggleSelection}
+            />
+          </>
         )}
       </main>
     </div>

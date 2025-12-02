@@ -1,12 +1,14 @@
 import axios from "axios";
 
-export const BASE_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.10:3001";
+export const BASE_API_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "https://photon-backend-c8wj.onrender.com";
 
 // Function to extract token from URL query params
 const getTokenFromURL = (): string | null => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     const params = new URLSearchParams(window.location.search);
-    return params.get('token');
+    return params.get("token");
   }
   return null;
 };

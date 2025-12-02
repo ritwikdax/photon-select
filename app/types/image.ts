@@ -3,9 +3,10 @@ export interface ImageData {
   name: string;
   mimeType: string;
   thumbnailLink: string;
+  hdPreviewLink: string;
   modifiedTime: string;
   size: string;
-  previewUrl: string;
+  originalLink: string;
 }
 
 export interface FolderData {
