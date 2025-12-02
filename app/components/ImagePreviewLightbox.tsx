@@ -1,13 +1,14 @@
 "use client";
-import { useCallback } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import Lightbox from "yet-another-react-lightbox";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import "yet-another-react-lightbox/styles.css";
 import { ImageData } from "../types/image";
-import { HeartIcon, DownloadIcon } from "./icons";
 import { BASE_API_URL } from "../utils/http";
 import { useSelectImage } from "../hooks/mutations/useSelectImage";
 import { useUnselectImage } from "../hooks/mutations/useUnselectImage";
+import { useMaxSelection } from "../hooks/queries/useMaxSelection";
+import LightboxToolbarActions from "./LightboxToolbarActions";
 
 interface ImagePreviewLightboxProps {
   images: ImageData[];
@@ -29,14 +30,13 @@ const ImagePreviewLightbox = ({
   folderName,
   selectedImages,
 }: ImagePreviewLightboxProps) => {
-  //   const toggleSelectionOnServer = useImageSelectionHandler({
-  //     folderId,
-  //     folderName,
-  //     onToggleSelection,
-  //   });
-
   const selectImageMutation = useSelectImage();
   const unselectImageMutation = useUnselectImage();
+  const { data: maxSelectionData } = useMaxSelection();
+  const [activeIndex, setActiveIndex] = useState(currentIndex);
+
+  const isSelectionAllowed = maxSelectionData?.isSelectionAllowed ?? true;
+
   const handleSelectionToggle = useCallback(
     (image: ImageData, isSelected: boolean) => {
       if (isSelected) {
@@ -63,13 +63,51 @@ const ImagePreviewLightbox = ({
     document.body.removeChild(link);
   }, []);
 
-  const slides = images.map((image, index) => ({
-    src: `${BASE_API_URL}/public/preview/${image.id}`,
-    alt: image.name,
-    title: image.name,
-    imageId: image.id,
-    slideIndex: index,
-  }));
+  const slides = useMemo(
+    () =>
+      images.map((image, index) => ({
+        src: `${BASE_API_URL}/public/preview/${image.id}`,
+        alt: image.name,
+        title: image.name,
+        imageId: image.id,
+        slideIndex: index,
+      })),
+    [images]
+  );
+  const currentImage = useMemo(
+    () => images[activeIndex],
+    [images, activeIndex]
+  );
+
+  const isCurrentImageSelected = useMemo(
+    () => selectedImages.has(currentImage?.id || ""),
+    [selectedImages, currentImage?.id]
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        isOpen &&
+        isSelectionAllowed &&
+        event.code === "Space" &&
+        currentImage
+      ) {
+        event.preventDefault();
+        handleSelectionToggle(currentImage, isCurrentImageSelected);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    isOpen,
+    isSelectionAllowed,
+    currentImage,
+    isCurrentImageSelected,
+    handleSelectionToggle,
+  ]);
 
   return (
     <Lightbox
@@ -87,59 +125,29 @@ const ImagePreviewLightbox = ({
       }}
       on={{
         view: ({ index }) => {
-          // Track current slide index if needed
+          setActiveIndex(index);
         },
       }}
       toolbar={{
         buttons: [
-          <div
-            key={`header-${currentIndex}`}
-            className="flex items-center gap-3">
-            {(() => {
-              const slideData = slides[currentIndex];
-              const image = images.find((img) => img.id === slideData?.imageId);
-              const isSelected = selectedImages.has(slideData?.imageId || "");
-              return (
-                image && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleDownload(image);
-                      }}
-                      style={{ cursor: "pointer" }}
-                      className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors bg-white/10 text-white hover:bg-white/20"
-                      title="Download full-size image">
-                      <DownloadIcon className="w-5 h-5" />
-                      View Original
-                    </button>
-                    <button
-                      key={`heart-${currentIndex}`}
-                      type="button"
-                      style={{ cursor: "pointer" }}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleSelectionToggle(image, isSelected);
-                      }}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                        isSelected
-                          ? "bg-white text-red-500"
-                          : "bg-white/10 text-white hover:bg-white/20"
-                      }`}>
-                      <HeartIcon
-                        filled={isSelected}
-                        className={`w-5 h-5 ${
-                          isSelected ? "text-red-500" : "text-white"
-                        }`}
-                      />
-                      {isSelected ? "Selected" : "Select"}
-                    </button>
-                  </>
-                )
-              );
-            })()}
-          </div>,
+          currentImage ? (
+            <span
+              key={`filename-${currentImage.id}`}
+              className="text-white text-sm font-medium px-4 py-2 mr-auto"
+              title={currentImage.name}>
+              {currentImage.name}
+            </span>
+          ) : null,
+          currentImage ? (
+            <LightboxToolbarActions
+              key={`toolbar-${currentImage.id}`}
+              image={currentImage}
+              isSelected={isCurrentImageSelected}
+              isSelectionAllowed={isSelectionAllowed}
+              onDownload={handleDownload}
+              onToggleSelection={handleSelectionToggle}
+            />
+          ) : null,
           "close",
         ],
       }}

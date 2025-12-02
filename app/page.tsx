@@ -11,8 +11,6 @@ import { AlertIcon, RefreshIcon, ImageIcon } from "./components/icons";
 import { useMaxSelection } from "./hooks/queries/useMaxSelection";
 import { useSelectedImages } from "./hooks/queries/useSelectedImages";
 import { useIsCountExceeded } from "./hooks/useIsCountExceeded";
-import { useSelectImage } from "./hooks/mutations/useSelectImage";
-import { useUnselectImage } from "./hooks/mutations/useUnselectImage";
 
 export default function Home() {
   const [images, setImages] = useState<ImageData[]>([]);
@@ -26,6 +24,7 @@ export default function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [activePreviewIndex, setActivePreviewIndex] = useState<number>(-1);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"all" | "selected">("all");
 
   const selectedFolderName = useSelectedFolderName();
   const selectedFolderId = useSelectedFolderId();
@@ -36,8 +35,6 @@ export default function Home() {
     isLoading: isSelectedImagesLoading,
     error: selectedImagesError,
   } = useSelectedImages();
-  const selectImageMutation = useSelectImage();
-  const unselectImageMutation = useUnselectImage();
 
   const loadImages = useCallback(
     async (pageToken?: string, append: boolean = false) => {
@@ -114,6 +111,16 @@ export default function Home() {
     []
   );
 
+  const handleTabChange = useCallback((tab: "all" | "selected") => {
+    setActiveTab(tab);
+  }, []);
+
+  // Filter images based on active tab
+  const displayedImages =
+    activeTab === "selected"
+      ? images.filter((img) => selectedImagesSet?.has(img.id))
+      : images;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -127,6 +134,8 @@ export default function Home() {
         isMaxCountExceeded={isMaxCountExceeded}
         maxSelectionCount={maxSelectionData?.maxSelectionCount ?? 0}
         isSelectionAllowed={maxSelectionData?.isSelectionAllowed ?? false}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
       />
 
       {/* Main Content */}
@@ -168,22 +177,28 @@ export default function Home() {
               </button>
             </div>
           </div>
-        ) : images.length === 0 ? (
+        ) : displayedImages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-96 p-8">
             <div className="text-center">
               <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                No Images Found
+                {activeTab === "selected"
+                  ? "No Selected Images"
+                  : "No Images Found"}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                There are no images available to display.
+                {activeTab === "selected"
+                  ? "You haven't selected any images yet. Switch to 'All Images' to select some."
+                  : "There are no images available to display."}
               </p>
-              <button
-                onClick={handleRetry}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200">
-                <RefreshIcon className="w-4 h-4 mr-2" />
-                Refresh
-              </button>
+              {activeTab === "all" && (
+                <button
+                  onClick={handleRetry}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200">
+                  <RefreshIcon className="w-4 h-4 mr-2" />
+                  Refresh
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -191,17 +206,17 @@ export default function Home() {
             <ImageGrid
               folderId={selectedFolderId ?? ""}
               folderName={selectedFolderName ?? ""}
-              images={images}
+              images={displayedImages}
               onImageClick={handleImageClick}
               onLoadMore={handleLoadMore}
-              hasMore={hasMore}
+              hasMore={activeTab === "all" && hasMore}
               isLoadingMore={isLoadingMore}
               selectedImages={selectedImagesSet || new Set()}
               //onToggleSelection={handleToggleSelection}
             />
 
             <ImagePreviewLightbox
-              images={images}
+              images={displayedImages}
               currentIndex={activePreviewIndex}
               isOpen={isLightboxOpen}
               onClose={handleClosePreview}

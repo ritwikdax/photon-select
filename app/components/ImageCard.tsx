@@ -54,7 +54,7 @@ export const ImageCard = memo(({ image, index, onClick }: ImageCardProps) => {
 
   return (
     <div
-      className="group cursor-pointer bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+      className="group cursor-pointer bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 overflow-hidden"
       onClick={handleClick}>
       <div className="relative aspect-square overflow-hidden rounded-t-lg">
         <LazyImage

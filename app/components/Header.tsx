@@ -2,6 +2,7 @@ import { useLogo } from "../hooks/queries/useLogo";
 import FolderDropdown from "./FolderDropdown";
 import MaxCountExceedWarning from "./MaxCountExceedWarning";
 import SelectionNotAllowedWarning from "./SelectionNotAllowedWarning";
+import TabButtonGroup from "./TabButtonGroup";
 
 interface HeaderProps {
   isLoading: boolean;
@@ -13,6 +14,8 @@ interface HeaderProps {
   isMaxCountExceeded?: boolean;
   maxSelectionCount?: number;
   isSelectionAllowed?: boolean;
+  activeTab?: "all" | "selected";
+  onTabChange?: (tab: "all" | "selected") => void;
 }
 
 export default function Header({
@@ -25,6 +28,8 @@ export default function Header({
   isMaxCountExceeded = false,
   maxSelectionCount = 50,
   isSelectionAllowed,
+  activeTab = "all",
+  onTabChange = () => {},
 }: HeaderProps) {
   const { data: logoData } = useLogo();
   return (
@@ -79,6 +84,15 @@ export default function Header({
               <FolderDropdown />
             </div>
 
+            {/* Tab Button Group */}
+            <div className="flex items-center justify-center">
+              <TabButtonGroup
+                activeTab={activeTab}
+                onTabChange={onTabChange}
+                selectedCount={selectedImagesCount}
+              />
+            </div>
+
             {/* Status Info */}
             {!isLoading && !error && (
               <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 flex-wrap">
@@ -102,7 +116,7 @@ export default function Header({
                     </span>
                   </>
                 )}
-                <span className="hidden sm:inline">•</span>
+                {/* <span className="hidden sm:inline">•</span>
                 <span className="hidden lg:inline">
                   Click any image to open as slide
                 </span>
@@ -113,7 +127,7 @@ export default function Header({
                       Scroll down to load more
                     </span>
                   </>
-                )}
+                )} */}
               </div>
             )}
           </div>
