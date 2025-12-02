@@ -6,6 +6,7 @@ import { CheckIcon, HeartIcon } from "./icons";
 import { useFolderContext } from "../context/FolderContext";
 import { useSelectImage } from "../hooks/mutations/useSelectImage";
 import { useUnselectImage } from "../hooks/mutations/useUnselectImage";
+import { useMaxSelection } from "../hooks/queries/useMaxSelection";
 
 interface ImageCardProps {
   image: ImageData;
@@ -18,6 +19,7 @@ export const ImageCard = memo(({ image, index, onClick }: ImageCardProps) => {
   const isSelected = useIsImageSelected(image.id);
   const selectImageMutation = useSelectImage();
   const unselectImageMutation = useUnselectImage();
+  const { data: maxSelectionData } = useMaxSelection();
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -27,7 +29,7 @@ export const ImageCard = memo(({ image, index, onClick }: ImageCardProps) => {
       }
       onClick?.(image, index);
     },
-    [image, index, onClick, isSelected]
+    [image, index, onClick]
   );
 
   const handleToggleSelection = useCallback(
@@ -63,30 +65,32 @@ export const ImageCard = memo(({ image, index, onClick }: ImageCardProps) => {
         <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
 
         {/* Selection Toggle Button */}
-        <button
-          type="button"
-          onClick={handleToggleSelection}
-          onMouseDown={(e) => e.stopPropagation()}
-          onTouchStart={(e) => e.stopPropagation()}
-          className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all duration-300 z-10 ${
-            isSelected
-              ? "bg-white/90 shadow-lg scale-110"
-              : "bg-black/30 hover:bg-black/50 hover:scale-105"
-          }`}
-          aria-label={
-            isSelected
-              ? "Remove from editing selection"
-              : "Add to editing selection"
-          }>
-          <HeartIcon
-            filled={isSelected}
-            className={`w-6 h-6 transition-all duration-300 ${
+        {maxSelectionData?.isSelectionAllowed && (
+          <button
+            type="button"
+            onClick={handleToggleSelection}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all duration-300 z-10 ${
               isSelected
-                ? "text-red-500 scale-110"
-                : "text-white drop-shadow-lg hover:text-red-300"
+                ? "bg-white/90 shadow-lg scale-110"
+                : "bg-black/30 hover:bg-black/50 hover:scale-105"
             }`}
-          />
-        </button>
+            aria-label={
+              isSelected
+                ? "Remove from editing selection"
+                : "Add to editing selection"
+            }>
+            <HeartIcon
+              filled={isSelected}
+              className={`w-6 h-6 transition-all duration-300 ${
+                isSelected
+                  ? "text-red-500 scale-110"
+                  : "text-white drop-shadow-lg hover:text-red-300"
+              }`}
+            />
+          </button>
+        )}
 
         {/* Selection indicator overlay */}
         {isSelected && (

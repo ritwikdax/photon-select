@@ -1,5 +1,7 @@
+import { useLogo } from "../hooks/queries/useLogo";
 import FolderDropdown from "./FolderDropdown";
-import { WarningIcon } from "./icons";
+import MaxCountExceedWarning from "./MaxCountExceedWarning";
+import SelectionNotAllowedWarning from "./SelectionNotAllowedWarning";
 
 interface HeaderProps {
   isLoading: boolean;
@@ -10,6 +12,7 @@ interface HeaderProps {
   hasMore: boolean;
   isMaxCountExceeded?: boolean;
   maxSelectionCount?: number;
+  isSelectionAllowed?: boolean;
 }
 
 export default function Header({
@@ -21,7 +24,9 @@ export default function Header({
   hasMore,
   isMaxCountExceeded = false,
   maxSelectionCount = 50,
+  isSelectionAllowed,
 }: HeaderProps) {
+  const { data: logoData } = useLogo();
   return (
     <>
       {/* Main Header */}
@@ -29,11 +34,24 @@ export default function Header({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Photon Gallery
-              </h1>
+              <div className="flex items-center gap-4">
+                {logoData?.logo && logoData?.logoDark && (
+                  <>
+                    <img
+                      src={logoData.logoDark}
+                      alt="Logo"
+                      className="h-12 w-auto dark:hidden"
+                    />
+                    <img
+                      src={logoData.logo}
+                      alt="Logo"
+                      className="h-12 w-auto hidden dark:block"
+                    />
+                  </>
+                )}
+              </div>
               <p className="mt-2 text-gray-600 dark:text-gray-400">
-                Browse and view your image collection
+                View and select images for editing.
                 {selectedImagesError && (
                   <span className="block text-red-500 text-sm mt-1">
                     Warning: Could not load selected images (
@@ -42,24 +60,9 @@ export default function Header({
                 )}
               </p>
             </div>
-
             {/* Maximum Count Exceeded Warning */}
-            {isMaxCountExceeded && (
-              <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <WarningIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                      Maximum Count Exceeded
-                    </h3>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                      You have exceeded the selection limit. Additional charges
-                      may apply for extra selections.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+            {isMaxCountExceeded && <MaxCountExceedWarning />}
+            {!isSelectionAllowed && <SelectionNotAllowedWarning />}
           </div>
         </div>
       </div>
@@ -101,7 +104,7 @@ export default function Header({
                 )}
                 <span className="hidden sm:inline">•</span>
                 <span className="hidden lg:inline">
-                  Click any image to open in new tab
+                  Click any image to open as slide
                 </span>
                 {hasMore && (
                   <>

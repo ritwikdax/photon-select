@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect, useCallback, use } from "react";
 import ImageGrid from "./components/ImageGrid";
 import ImagePreviewLightbox from "./components/ImagePreviewLightbox";
@@ -127,6 +126,7 @@ export default function Home() {
         hasMore={hasMore}
         isMaxCountExceeded={isMaxCountExceeded}
         maxSelectionCount={maxSelectionData?.maxSelectionCount ?? 0}
+        isSelectionAllowed={maxSelectionData?.isSelectionAllowed ?? false}
       />
 
       {/* Main Content */}

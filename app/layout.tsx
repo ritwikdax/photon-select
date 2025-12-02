@@ -4,6 +4,9 @@ import "./globals.css";
 import { ToastProvider } from "./components/ToastProvider";
 import { FolderProvider } from "./context/FolderContext";
 import { ReactQueryProvider } from "./providers/ReactQueryProvider";
+import GlobalLoadingScreen from "./components/GlobalLoadingScreen";
+import { LoadingProvider } from "./context/LoadingContext";
+import { AppContents } from "./components/AppContent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,9 +33,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ReactQueryProvider>
-          <FolderProvider>
-            <ToastProvider>{children}</ToastProvider>
-          </FolderProvider>
+          <LoadingProvider>
+            <GlobalLoadingScreen />
+            <AppContents>
+              <FolderProvider>
+                <ToastProvider>{children}</ToastProvider>
+              </FolderProvider>
+            </AppContents>
+          </LoadingProvider>
         </ReactQueryProvider>
       </body>
     </html>
