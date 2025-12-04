@@ -15,3 +15,4 @@ export { ArrowRightIcon } from "./ArrowRightIcon";
 export { ZoomInIcon } from "./ZoomInIcon";
 export { ZoomOutIcon } from "./ZoomOutIcon";
 export { DownloadIcon } from "./DownloadIcon";
+export { CommentIcon } from "./CommentIcon";

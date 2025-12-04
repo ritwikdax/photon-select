@@ -5,74 +5,40 @@ import ImagePreviewLightbox from "./components/ImagePreviewLightbox";
 import LoadingSpinner from "./components/LoadingSpinner";
 import Header from "./components/Header";
 import { ImageData } from "./types/image";
-import { imageService } from "./services/imageService";
 import { useSelectedFolderId, useSelectedFolderName } from "./hooks/useFolders";
 import { AlertIcon, RefreshIcon, ImageIcon } from "./components/icons";
 import { useMaxSelection } from "./hooks/queries/useMaxSelection";
-import { useSelectedImages } from "./hooks/queries/useSelectedImages";
+import { useSelectedImagesSet } from "./hooks/queries/useSelectedImagesSet";
 import { useIsCountExceeded } from "./hooks/useIsCountExceeded";
+import { useLoadImages } from "./hooks/useLoadImages";
+import { useSelectedImages } from "./hooks/queries/useSelectedImages";
 
 export default function Home() {
-  const [images, setImages] = useState<ImageData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const isMaxCountExceeded = useIsCountExceeded();
-  const [nextPageToken, setNextPageToken] = useState<string | undefined>(
-    undefined
-  );
-  const [hasMore, setHasMore] = useState(true);
   const [activePreviewIndex, setActivePreviewIndex] = useState<number>(-1);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "selected">("all");
-
   const selectedFolderName = useSelectedFolderName();
   const selectedFolderId = useSelectedFolderId();
+  const isMaxCountExceeded = useIsCountExceeded();
+  const { data: selectedImages } = useSelectedImages();
+
   const { data: maxSelectionData, isLoading: isMaxSelectionLoading } =
     useMaxSelection();
   const {
     data: selectedImagesSet,
     isLoading: isSelectedImagesLoading,
     error: selectedImagesError,
-  } = useSelectedImages();
+  } = useSelectedImagesSet();
 
-  const loadImages = useCallback(
-    async (pageToken?: string, append: boolean = false) => {
-      try {
-        if (!pageToken) {
-          // First load
-          setIsLoading(true);
-          setImages([]);
-          setNextPageToken(undefined);
-        } else {
-          // Loading more
-          setIsLoadingMore(true);
-        }
-        setError(null);
-
-        const response = await imageService.fetchImages({
-          nextPageToken: pageToken,
-          folderId: selectedFolderId || undefined, // Pass the selected folder ID
-        });
-
-        if (append) {
-          setImages((prev) => [...prev, ...response.images]);
-        } else {
-          setImages(response.images);
-        }
-
-        setHasMore(response.hasMore);
-        setNextPageToken(response.nextPageToken);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load images");
-        console.error("Failed to fetch images:", err);
-      } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
-      }
-    },
-    [selectedFolderId]
-  ); // Add selectedFolderId as dependency
+  const {
+    images,
+    isLoading,
+    isLoadingMore,
+    error,
+    hasMore,
+    nextPageToken,
+    loadImages,
+  } = useLoadImages(selectedFolderId);
 
   useEffect(() => {
     loadImages(undefined, false); // Load first page without token
@@ -116,10 +82,7 @@ export default function Home() {
   }, []);
 
   // Filter images based on active tab
-  const displayedImages =
-    activeTab === "selected"
-      ? images.filter((img) => selectedImagesSet?.has(img.id))
-      : images;
+  const displayedImages = activeTab === "selected" ? selectedImages : images;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -177,7 +140,7 @@ export default function Home() {
               </button>
             </div>
           </div>
-        ) : displayedImages.length === 0 ? (
+        ) : displayedImages?.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-96 p-8">
             <div className="text-center">
               <ImageIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
@@ -206,7 +169,7 @@ export default function Home() {
             <ImageGrid
               folderId={selectedFolderId ?? ""}
               folderName={selectedFolderName ?? ""}
-              images={displayedImages}
+              images={displayedImages ?? []}
               onImageClick={handleImageClick}
               onLoadMore={handleLoadMore}
               hasMore={activeTab === "all" && hasMore}
@@ -216,7 +179,7 @@ export default function Home() {
             />
 
             <ImagePreviewLightbox
-              images={displayedImages}
+              images={displayedImages ?? []}
               currentIndex={activePreviewIndex}
               isOpen={isLightboxOpen}
               onClose={handleClosePreview}
@@ -224,6 +187,10 @@ export default function Home() {
               folderName={selectedFolderName ?? ""}
               selectedImages={selectedImagesSet || new Set()}
               onToggleSelection={handleToggleSelection}
+              hasMore={activeTab === "all" && hasMore}
+              isLoadingMore={isLoadingMore}
+              onLoadMore={handleLoadMore}
+              activeTab={activeTab}
             />
           </>
         )}

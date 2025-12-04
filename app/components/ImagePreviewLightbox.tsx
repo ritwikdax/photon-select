@@ -19,6 +19,10 @@ interface ImagePreviewLightboxProps {
   folderName: string;
   selectedImages: Set<string>;
   onToggleSelection?: (imageId: string, isSelected: boolean) => boolean | void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
+  activeTab?: "all" | "selected";
 }
 
 const ImagePreviewLightbox = ({
@@ -29,11 +33,16 @@ const ImagePreviewLightbox = ({
   folderId,
   folderName,
   selectedImages,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
+  activeTab = "all",
 }: ImagePreviewLightboxProps) => {
   const selectImageMutation = useSelectImage();
   const unselectImageMutation = useUnselectImage();
   const { data: maxSelectionData } = useMaxSelection();
   const [activeIndex, setActiveIndex] = useState(currentIndex);
+  const [isCommentPopoverOpen, setIsCommentPopoverOpen] = useState(false);
 
   const isSelectionAllowed = maxSelectionData?.isSelectionAllowed ?? true;
 
@@ -90,7 +99,8 @@ const ImagePreviewLightbox = ({
         isOpen &&
         isSelectionAllowed &&
         event.code === "Space" &&
-        currentImage
+        currentImage &&
+        !isCommentPopoverOpen
       ) {
         event.preventDefault();
         handleSelectionToggle(currentImage, isCurrentImageSelected);
@@ -107,6 +117,33 @@ const ImagePreviewLightbox = ({
     currentImage,
     isCurrentImageSelected,
     handleSelectionToggle,
+    isCommentPopoverOpen,
+  ]);
+
+  // Auto-load more images when approaching the end in "all" mode
+  useEffect(() => {
+    if (
+      isOpen &&
+      activeTab === "all" &&
+      hasMore &&
+      !isLoadingMore &&
+      onLoadMore &&
+      images.length > 0
+    ) {
+      // Load more when we're within 3 images of the end
+      const threshold = 3;
+      if (activeIndex >= images.length - threshold) {
+        onLoadMore();
+      }
+    }
+  }, [
+    isOpen,
+    activeTab,
+    activeIndex,
+    images.length,
+    hasMore,
+    isLoadingMore,
+    onLoadMore,
   ]);
 
   return (
@@ -121,7 +158,11 @@ const ImagePreviewLightbox = ({
         scrollToZoom: true,
       }}
       carousel={{
-        finite: false,
+        finite: true,
+      }}
+      animation={{
+        fade: 0,
+        swipe: 0,
       }}
       on={{
         view: ({ index }) => {
@@ -146,6 +187,7 @@ const ImagePreviewLightbox = ({
               isSelectionAllowed={isSelectionAllowed}
               onDownload={handleDownload}
               onToggleSelection={handleSelectionToggle}
+              onCommentPopoverChange={setIsCommentPopoverOpen}
             />
           ) : null,
           "close",

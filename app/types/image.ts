@@ -7,6 +7,7 @@ export interface ImageData {
   modifiedTime: string;
   size: string;
   originalLink: string;
+  note?: string;
 }
 
 export interface FolderData {

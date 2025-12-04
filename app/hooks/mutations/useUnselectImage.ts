@@ -13,26 +13,30 @@ export const useUnselectImage = () => {
     },
     onMutate: async (imageId) => {
       // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["selectedImagesSet"] });
       await queryClient.cancelQueries({ queryKey: ["selectedImages"] });
 
       // Snapshot previous value
-      const previousImages = queryClient.getQueryData<Set<string>>([
-        "selectedImages",
+      const previousImagesSet = queryClient.getQueryData<Set<string>>([
+        "selectedImagesSet",
       ]);
 
       // Optimistically update
-      queryClient.setQueryData<Set<string>>(["selectedImages"], (old) => {
+      queryClient.setQueryData<Set<string>>(["selectedImagesSet"], (old) => {
         const newSet = new Set(old);
         newSet.delete(imageId);
         return newSet;
       });
 
-      return { previousImages };
+      return { previousImagesSet };
     },
     onError: (_err, _imageId, context) => {
       // Rollback on error
-      if (context?.previousImages) {
-        queryClient.setQueryData(["selectedImages"], context.previousImages);
+      if (context?.previousImagesSet) {
+        queryClient.setQueryData(
+          ["selectedImagesSet"],
+          context.previousImagesSet
+        );
       }
       error("Failed to unselect image");
     },
@@ -41,6 +45,7 @@ export const useUnselectImage = () => {
     },
     onSettled: () => {
       // Refetch to ensure sync with server
+      queryClient.invalidateQueries({ queryKey: ["selectedImagesSet"] });
       queryClient.invalidateQueries({ queryKey: ["selectedImages"] });
     },
   });
