@@ -40,7 +40,7 @@ const LightboxToolbarActions = memo(
 
     return (
       <>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 bg-black/40 backdrop-blur-sm px-4 py-3 rounded-full">
           <button
             type="button"
             onClick={(event) => {
